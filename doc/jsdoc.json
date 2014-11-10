@@ -1,0 +1,18 @@
+{
+    "plugins": [ "plugins/markdown"],
+    "markdown": {
+        "parser": "gfm",
+        "hardwrap": true
+    },
+    "tags": {
+        "allowUnknownTags": true
+    },
+    "source": {
+        "includePattern": ".+\\.js(doc)?$",
+        "excludePattern": "(^|\\/|\\\\)_"
+    },
+    "templates": {
+        "cleverLinks": false,
+        "monospaceLinks": false
+    }
+}
