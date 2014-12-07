@@ -1,7 +1,7 @@
 {
   "name": "snooze",
   "description": "Simple Angular-esque REST API",
-  "version": "0.7.61",
+  "version": "0.7.62",
   "author": {
     "name": "Micah Williamson",
     "email": "micahwllmsn@gmail.com"
