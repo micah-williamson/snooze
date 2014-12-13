@@ -1,7 +1,7 @@
 {
   "name": "snooze",
-  "description": "Simple Angular-esque REST API",
-  "version": "0.7.63",
+  "description": "NodeJS Dependency Injection Framework",
+  "version": "1.0.0-alpha.1",
   "author": {
     "name": "Micah Williamson",
     "email": "micahwllmsn@gmail.com"
@@ -16,26 +16,19 @@
   },
   "homepage": "http://snoozejs.org/",
   "dependencies": {
-    "body-parser": "^1.2.0",
     "color": "^0.6.0",
     "colors": "^0.6.2",
-    "expect.js": "^0.3.1",
-    "express": "^4.2.0",
-    "jsdoc": "^3.3.0-alpha10",
     "lodash": "^2.4.1",
-    "mmmagic": "^0.3.8",
-    "multer": "0.0.7",
-    "q": "^1.0.1",
-    "request": "^2.40.0",
-    "sequelize": "^1.7.10"
+    "snooze-baselib": "iamchairs/snooze-baselib.git#dev"
   },
   "keywords": [
     "snooze",
-    "rest",
-    "restful",
+    "injection",
+    "dependency",
     "framework",
     "web",
     "route",
+    "rest",
     "api"
   ],
   "engines": {
