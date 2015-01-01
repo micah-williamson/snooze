@@ -186,10 +186,10 @@ Each module is responsible for importing it's own entities. You don't need to wo
 
 #### snooze.json (config)
 
-If the root of your app has a snooze.json file in it, snooze will load the contents into the config when it's constructed. Modules can be written to read the config and change the behavior of your application in the configuration or running phases of your application. The only available property in vanila snooze.json is the **silent** property. False be default but set to true and logs and warns will not print to the console. So I will use `snooze-baselib`'s extension of config as an example.
+If the root of your app has a snooze.json file in it, snooze will load the contents into the config when it's constructed. Modules can be written to read the config and change the behavior of your application in the configuration or running phases of your application. The only available property in vanila snooze.json is the **silent** property. False be default but set to true and logs and warns will not print to the console.
 
     {
-        silent: true
+        "silent": true
     }
 
 ## Advanced Modifications
@@ -460,13 +460,13 @@ Unrecognized properties in the snooze.json are passively ignored. Using `configP
 ``` 
     // snooze.json
     {
-        mode: 'development',
-        modes: {
-            development: {
-                port: 8080
+        "mode": "development",
+        "modes": {
+            "development": {
+                "port": 8080
             },
-            production: {
-                port: 80
+            "production": {
+                "port": 80
             }
         }
     }
