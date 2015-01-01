@@ -1,7 +1,7 @@
 {
   "name": "snooze",
-  "description": "Simple Angular-esque REST API",
-  "version": "0.7.63",
+  "description": "NodeJS Dependency Injection Framework",
+  "version": "1.0.0-alpha.1",
   "author": {
     "name": "Micah Williamson",
     "email": "micahwllmsn@gmail.com"
@@ -16,37 +16,38 @@
   },
   "homepage": "http://snoozejs.org/",
   "dependencies": {
-    "body-parser": "^1.2.0",
     "color": "^0.6.0",
     "colors": "^0.6.2",
-    "expect.js": "^0.3.1",
-    "express": "^4.2.0",
-    "jsdoc": "^3.3.0-alpha10",
-    "lodash": "^2.4.1",
-    "mmmagic": "^0.3.8",
-    "multer": "0.0.7",
-    "q": "^1.0.1",
-    "request": "^2.40.0",
-    "sequelize": "^1.7.10"
+    "glob": "^4.3.1",
+    "lodash": "^2.4.1"
   },
   "keywords": [
     "snooze",
-    "rest",
-    "restful",
+    "injection",
+    "dependency",
     "framework",
     "web",
     "route",
+    "rest",
     "api"
   ],
   "engines": {
     "node": ">= 0.10.0"
   },
   "license": "MIT",
-  "readme": "snooze\n======\n\n## STABLE VERSION COMING\n\nAugust 10, 2014 Status Update\n\nThank you for using snooze/snooze-stdlib. Being the only one working on snooze right now in my free time I don't have a lot of time to work on snooze AND update the documentation. With all the changes and updates I'm adding to snooze it's currently in a very unstable state with no recent documentation. This will be fixed when snooze reaches v1.0 which could be in a few weeks to a few months.\n\nStay up to date on progress by following me on twitter:\nhttps://twitter.com/micahwllmsn\n\nAnd feel free to send me questions, comments, bug reports via email:\nmicahwllmsn@gmail.com\n\nThank you for your patience!\n\n## Site\n\nRestful API For NodeJS\n\nSite with documenation now up!\nhttp://snoozejs.org/\n\nSnooze is a RESTful framework inspired by Angular. Why yet another framework? What's wrong with express? Snooze uses express. The reason for it is because after searching for a simple module framework to manage my restful api I couldn't find anything that I wanted to use. Snooze was developed by me, for me, to simplify the whole process. But I sure do hope other people will find it useful as well.\n\n## snooze-cli MOVED!!\n\nThe snooze command line interfaced has moved to it's own project. snooze-cli should be installted globally\n\n```\nnpm install snooze-cli -g\n```\n\nYou may need to remove the old snooze bin first\n\n```\nrm -f /usr/local/bin/snooze\n```\n\n*Sorry for the inconvenience*\n\n## Installation\n\n```\nnpm install snooze --save\n```\n\n## Snooze Standard Library (recommended)\n\nThe Snooze Standard Library is a module that includes commonly used functionality for your project. See more at https://github.com/iamchairs/snooze-stdlib\n\n## Basic Use\n\nTo get started require snooze and create a module.\n\n```\nvar snooze = require('snooze');\nsnooze.module('myServer');\n```\n\n## Routes\n\n```\nsnooze.module('myServer', ['snooze-stdlib'])\n  .route('get', '/users/:username', {\n    controller: 'UserCtrl',\n    action: 'getUser'\n  })\n  .route('put', '/users/save', {\n  \tcontroller: 'UserCtrl',\n  \taction: 'save',\n  \tvalidators: 'BasicAuth'\n  })\n  .route('post', '/user/new', {\n    controller: 'UserCtrl',\n    action: 'new'\n  })\n  .setPort(80); // Defaults to 3000\n```\n\nRoutes are defined as **.route(method, path, options)**. The possible methods are **GET**, **POST**, **PUT**, and **DELETE**.\n\n#### Route Options\n\nOptions requires a controller and action for a route. The controllers will be explained next. The actions are methods (functions) in the controller that will handle the request and send the response.\n\nValidators are optional and will be explained later.\n\n## Controllers\n\nControllers are used to handle all http requests. Controllers can be defined in the following way-\n\n```\nsnooze.module('myServer').controller('UserCtrl', function(User) {\n  var _getUser = function(res, options) {\n    res.send(200, {'username': options.params.username}); // params.username set by :username parameter in route. Ex: /users/iamchairs\n  };\n\n  var _save = function(res, options) {\n  \tUser.save(options.body); // body is the payload of the PUT, POST, or DELETE request\n  };\n\n  var _new = function(res, options) {\n    User.new(options.body); // body is the payload of the PUT, POST, or DELETE request\n  };\n\n  return {\n    getUser: _getUser,\n    save: _save,\n    new: _new\n  };\n});\n```\n\nThe methods defined in the controller handle processing and responding to http calls defined by route's action.\n\nYou can see **User** is being passed as a parameter and used in _save and _new. This is a service and is injected when the the module compiles it's services and controllers. More on services next.\n\nOptions is an object of all the useful information about the request. Currently this means parameters, url queries, and the body of the request.\n\n**It is important to remember that controllers should be stateless. Only one UserCtrl controller is created for the entire application.**\n\n## Services\n\nServices are any kind of injectable and should be used to handle any thinking, querying, mapping, etc. A controller **CAN** but **SHOULDN'T** do all of the thinking, querying, and mapping of data but this defeats the purpose creating a modular architecture. A service can be defined like so-\n\n```\nsnooze.module('myServer').service('Hello', function(AnotherService) {\n  var _getGreeting = function() {\n    return 'Hello Authorized World!';\n  };\n\n  return {\n    getGreeting: _getGreeting\n  };\n});\n```\n\nServices can also be injected into other services. The Hello service will be able to use whatever *AnotherService* provides in it's return.\n\n**It is important to remember that services should be stateless. Only one Hello service is created for the entire application.**\n\n### Validators\n\nValidators are very important in saving time and creating a readable application. It removes most of the redundant and simple checks from the logic of the controllers and services allowing you to focus on what the controllers and services are **actually** doing. Validators are defined similary to controllers and services and their names are provided to routes **validator** option as a string or an array of strings. To define a service you'l write-\n\n```\nsnooze.module('myServer').validator('BasicAuth', function() {\n  return function(deferred, req) {\n    deferred.resolve()\n  };\n});\n```\n\nValidators return a function and **deferred** and **req** are provided to the function at runtime. The validator will not itself send a response but will either reject or resolve the defer. When rejection an array should be provided with the first index being the response code (200, 404, 500, etc.) and the second being a string as the message of the error. If no rejection response is provided a 500 error is sent with a message referencing the route that failed.\n\nIf your server includes a login a common validator you'l implement is a BasicAuth validator. An example can be seen here-\n\n```\nvar snooze = require('snooze');\n\nsnooze.module('myServer').validator('BasicAuth', function(User) {\n  return function(deferred, req) {\n    setTimeout(function() {\n      var header = req.headers['authorization'] || null;\n      if(header !== null) {\n        token = header.split(/\\s+/).pop()||'';\n        auth = new Buffer(token, 'base64').toString();\n        parts = auth.split(/:/);\n\n        username = parts[0];\n        password = parts[1];\n\n        User.validLogin(username, password).then(function() {\n          deferred.resolve();\n        }).fail(function() {\n          deferred.reject([401, 'invalid loggin'])\n        });\n      } else {\n        deferred.reject([401, 'user not logged in']);\n      }\n    }, 500);\n  };\n});\n\nsnooze.module('myServer').route('/messages/post', {\n  controller: 'PostsCtrl',\n  action: 'new',\n  validators: 'BasicAuth'\n});\n```\n\nWhen multiple validators are provided-\n\n```\nsnooze.module('myServer').route('/post/delete/:thread_id', {\n  controller: 'ThreadCtrl',\n  ation: 'delete',\n  validators: ['BasicAuth', 'ThreadOwner']\n});\n```\n\n- All validators need to resolve before the request continues to the controller. If any validator rejects the request the tests will stop and the rejection response will send immediately.\n\n### Starting the Server\n\nOnce all routes, controllers, services, and validators are defined you'l need to start the server manually.\n\n```\nsnooze.module('myServer').wakeup();\n```\n> (loading information)\n\n> Is it morning already?\n\n> snooze started on port 8000\n\n## Application Structure\n\nThis is up to you. I've begun organizing my application as such-\n\n```\nmain.js\ncontrollers\\\n  UserCtrl.js\nroutes\\\n  User.js\nservices\\\n  User.js\nvalidators\\\n  BasicAuth.js\ndto\\\n  UserDTO.js\n```\n\nAnd to make loading all requirements easier you can use the libs module method to load all files in a directory into your project.\n\n```\nsnooze.module('myServer').libs(['controllers', 'routes', 'services', 'validators', 'dto']);\n```\n\n## DTOs\n\n```\nsnooze.module('myModule').dto('ContactDTO', {\n  id: {\n    type: 'int',\n    description: 'Id of the contact row',\n    example: 1\n  },\n  user1: {\n    type: 'int',\n    description: 'Id of the first user',\n    example: 1\n  },\n  user2: {\n    type: 'int',\n    description: 'Id of the second user',\n    example: 2\n  }\n});\n```\n\n### Injecting DTOs\n\n```\nsnooze.module('myModule').service('User', function(DB, ContactDTO, $q) {\n  var _getContact = function(id) {\n    // $q is a stdlib service\n    var deferred = $q.defer();\n    \n    // DB doesn't exist as a service in the stdlib\n    DB.query('SELECT * FROM contacts WHERE id=?', [id], function(err, rows) {\n      deferred.resolve(ContactDTO.create(rows[0]));\n    });\n    \n    return deferred.promise;\n  };\n  \n  return {\n    return getContact: _getContact\n  };\n});\n```\n\n### Nesting DTOs\n\n```\nsnooze.module('myModule').dto('UserDTO', {\n  id: {\n    type: 'int',\n    description: 'Id of the user.',\n    example: 1\n  },\n  username: {\n    type: 'string',\n    description: 'Username of the user',\n    example: 'iamchairs'\n  },\n  __methods: {\n    fromDB: function() {\n      return function(data) {\n        return {\n          id: data.user_id,\n          username: data.user_username\n        };\n      };\n    }\n  }\n});\n\nsnooze.module('myModule').dto('ContactDTO', {\n  id: {\n    type: 'int',\n    description: 'Id of the contact row',\n    example: 1\n  },\n  user1: {\n    type: '@UserDTO',\n    description: 'A UserDTO of the user.',\n    example: '@UserDTO'\n  },\n  user2: {\n    type: '@UserDTO',\n    description: 'A UserDTO of the user.',\n    example: '@UserDTO'\n  },\n  __methods: {\n    fromDB: function(UserDTO) {\n      return function(data) {\n        return {\n          id: data.contact_id,\n          user1: UserDTO.fromDB(data),\n          user2: UserDTO.fromDB(data)\n        };\n      };\n    }\n  }\n});\n```\n\n## snooze Command Line Interface\n\nA juvenile command line interface has begun that will help inspecting your snooze application. To use it make sure you've installed snooze globally.\n\n```\nnpm install snooze -g\n```\n        \nNavigate to your service application route directory and in the terminal type\n\n```\nsnooze [module_name] help\n```\n        \nfor the list of avaialble commands. The snooze command line expects your server applications starting point to be main.js.\n\nSite with documenation now up!\nhttp://snoozejs.org/\n",
   "readmeFilename": "README.md",
   "gitHead": "2952736a3cd272e076ce180cc9acaad2f560a7c3",
   "_id": "snooze@0.7.52",
   "scripts": {},
   "_shasum": "9c313512c65fbc83e75a23dc40d5013ea6af0b65",
-  "_from": "snooze@0.7.52"
+  "_from": "snooze@0.7.52",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-jshint": "^0.10.0",
+    "grunt-karma": "^0.9.0",
+    "jasmine-core": "^2.1.3",
+    "jshint": "^2.5.11",
+    "karma-phantomjs-launcher": "^0.1.4",
+    "should": "^4.4.2"
+  }
 }
