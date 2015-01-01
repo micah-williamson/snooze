@@ -186,19 +186,11 @@ Each module is responsible for importing it's own entities. You don't need to wo
 
 #### snooze.json (config)
 
-If the root of your app has a snooze.json file in it, snooze will load the contents into the config when it's constructed. Modules can be written to read the config and change the behavior of your application in the configuration or running phases of your application. **In vanilla snooze no configurable properties are available**. So I will use `snooze-baselib`'s extension of config as an example.
+If the root of your app has a snooze.json file in it, snooze will load the contents into the config when it's constructed. Modules can be written to read the config and change the behavior of your application in the configuration or running phases of your application. The only available property in vanila snooze.json is the **silent** property. False be default but set to true and logs and warns will not print to the console. So I will use `snooze-baselib`'s extension of config as an example.
 
     {
-    	"mode": "development",
-    	"modes": {
-    		"production": { /* production config */ },
-    		"development": { /* development config */ },
-    		"testing": { /* testing config */ },
-    		"foobar": { /* foobar config */ }
-    	}
+        silent: true
     }
-
-By importing `snooze-baselib` into your module a few more properties become available in your config. Notably allowing you to define modes of configuration. For more on this see the `snooze-baselib` README.
 
 ## Advanced Modifications
 In this section I'll go into creating custom Entities, Config Preprocessors, and Import Processes, and extending snooze.json.
@@ -402,5 +394,90 @@ Outputs
 ```
 
 #### Import Processes
+Import processes define how to import modules into others. By default, snooze has no import processes. `snooze-baselib` defines processes to import Entities. An import process is a function that returns the import process function. The first function allows manipulation of the existing importProcesses. The second (nested) function gets appended to the array of import processes.
+
+The import processes is given the source (imported) module and the dest (importee) module.
+
+Here is the processes for importing Entities.
+```
+    // lib/importProcesses/importEntities.js
+    (function() {
+    	'use strict';
+    
+    	module.exports = function(processes) {
+    		return function(source, dest) {
+    			var entities = source.EntityManager.getEntities();
+    
+    			for(var i = 0; i < entities.length; i++) {
+    				var entity = entities[i];
+    				dest.log(('+ Entity: ' + entity.getName()).blue);
+    				if(dest.EntityManager.entityExists(entity)) {
+    					dest.warn('Entity Exists: ' + entity.getName());
+    				} else {
+    					dest.EntityManager.registerEntity(entity);
+    				}
+    			}
+    		};
+    	};
+    })();
+```
+```
+snooze.module('myApp')
+    .registerImportProcessesFromPath('lib/importProcesses/*.js');
+```
+
 #### Config Preprocessors
-#### Using snooze.json
+Config preprocessors is another tool to help you extend snooze.json. `snooze-baselib` defines a preprocessors that allows you to define run modes for your application.
+```
+    // lib/configPreprocessors/mergeModeConfig.js
+    (function() {
+    	'use strict';
+    
+    	module.exports = function(processes) {
+    		return function(config, module) {
+    			var mode = config.mode;
+    			if(mode) {
+    				if(config.modes[mode]) {
+    					for(var key in config.modes[mode]) {
+    						config[key] = config.modes[mode][key];
+    					}
+    				}
+    			}
+    
+    			console.log(config);
+    		};
+    	};
+    })();
+```
+```
+snooze.module('myApp')
+    .registerConfigPreprocessorsFromPath('lib/importProcesses/*.js');
+```
+
+#### Extending snooze.json
+Unrecognized properties in the snooze.json are passively ignored. Using `configPreprocessors` and writing your Entities to read from the config lets you define custom configurations. The entire configuration is always available when called. One example for extending the snooze.json is if you were creating an HTTP service.
+
+``` 
+    // snooze.json
+    {
+        mode: 'development',
+        modes: {
+            development: {
+                port: 8080
+            },
+            production: {
+                port: 80
+            }
+        }
+    }
+```
+```
+    snooze.module('myApp')
+            .service('HTTP', function($config) {
+                var port = $config.port;
+                
+                // ...
+            });
+```
+
+What properties are available in config should be documented.
