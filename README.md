@@ -69,14 +69,14 @@ If the npm module hasn't been required using `require()` snooze will try to do t
 #### run
 A run processes may be what you use to run your app. Your module can define multiple run processes that will get called once `wakeup` or `doRuns` is called. It's recommended you should use `wakeup` instead. Run processes allow injected Entities.
 
-    angular.module('myApp').run(function(MyService) {
+    snooze.module('myApp').run(function(MyService) {
         MyService.doSomething();
     });
     
 #### config
 Config processes are called before run processes. Entities may define a config object. This is up to the writer of the entity to provide as well as document.
 
-    angular.module('myApp').config(function(MyService) {
+    snooze.module('myApp').config(function(MyService) {
         MyService.maxSomethings = 10;
     }).run(function(MyService) {
         MyService.doSomething();
