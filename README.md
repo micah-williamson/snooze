@@ -69,14 +69,14 @@ If the npm module hasn't been required using `require()` snooze will try to do t
 #### run
 A run processes may be what you use to run your app. Your module can define multiple run processes that will get called once `wakeup` or `doRuns` is called. It's recommended you should use `wakeup` instead. Run processes allow injected Entities.
 
-    angular.module('myApp').run(function(MyService) {
+    snooze.module('myApp').run(function(MyService) {
         MyService.doSomething();
     });
     
 #### config
 Config processes are called before run processes. Entities may define a config object. This is up to the writer of the entity to provide as well as document.
 
-    angular.module('myApp').config(function(MyService) {
+    snooze.module('myApp').config(function(MyService) {
         MyService.maxSomethings = 10;
     }).run(function(MyService) {
         MyService.doSomething();
@@ -186,10 +186,10 @@ Each module is responsible for importing it's own entities. You don't need to wo
 
 #### snooze.json (config)
 
-If the root of your app has a snooze.json file in it, snooze will load the contents into the config when it's constructed. Modules can be written to read the config and change the behavior of your application in the configuration or running phases of your application. The only available property in vanila snooze.json is the **silent** property. False be default but set to true and logs and warns will not print to the console. So I will use `snooze-baselib`'s extension of config as an example.
+If the root of your app has a snooze.json file in it, snooze will load the contents into the config when it's constructed. Modules can be written to read the config and change the behavior of your application in the configuration or running phases of your application. The only available property in vanila snooze.json is the **silent** property. False be default but set to true and logs and warns will not print to the console.
 
     {
-        silent: true
+        "silent": true
     }
 
 ## Advanced Modifications
@@ -460,13 +460,13 @@ Unrecognized properties in the snooze.json are passively ignored. Using `configP
 ``` 
     // snooze.json
     {
-        mode: 'development',
-        modes: {
-            development: {
-                port: 8080
+        "mode": "development",
+        "modes": {
+            "development": {
+                "port": 8080
             },
-            production: {
-                port: 80
+            "production": {
+                "port": 80
             }
         }
     }
