@@ -1,360 +1,483 @@
-snooze
-======
-
-## STABLE VERSION COMING
-
-August 10, 2014 Status Update
-
-Thank you for using snooze/snooze-stdlib. Being the only one working on snooze right now in my free time I don't have a lot of time to work on snooze AND update the documentation. With all the changes and updates I'm adding to snooze it's currently in a very unstable state with no recent documentation. This will be fixed when snooze reaches v1.0 which could be in a few weeks to a few months.
-
-Stay up to date on progress by following me on twitter:
-https://twitter.com/micahwllmsn
-
-And feel free to send me questions, comments, bug reports via email:
-micahwllmsn@gmail.com
-
-Thank you for your patience!
-
-## Site
-
-Restful API For NodeJS
-
-Site with documenation now up!
-http://snoozejs.org/
-
-Snooze is a RESTful framework inspired by Angular. Why yet another framework? What's wrong with express? Snooze uses express. The reason for it is because after searching for a simple module framework to manage my restful api I couldn't find anything that I wanted to use. Snooze was developed by me, for me, to simplify the whole process. But I sure do hope other people will find it useful as well.
-
-## snooze-cli MOVED!!
-
-The snooze command line interfaced has moved to it's own project. snooze-cli should be installted globally
-
-```
-npm install snooze-cli -g
-```
-
-You may need to remove the old snooze bin first
-
-```
-rm -f /usr/local/bin/snooze
-```
-
-*Sorry for the inconvenience*
-
+# Snooze 1.0.0-alpha.1
+## Differences to pre-alpha snooze
+Pretty much everything has been reworked here. Snooze is no longer opinionated on how it should be used and does not focus on creating a RESTful server (though it can still be used to). It has removed most of what was in the pre-alpha version to create a better foundation for a more powerful and modular framework. Mostly this is done in the way of Entities. **More information provided in the README below**.
 ## Installation
-
-```
-npm install snooze --save
-```
-
-## Snooze Standard Library (recommended)
-
-The Snooze Standard Library is a module that includes commonly used functionality for your project. See more at https://github.com/iamchairs/snooze-stdlib
-
-## Basic Use
-
-To get started require snooze and create a module.
-
-```
-var snooze = require('snooze');
-snooze.module('myServer');
-```
-
-## Routes
-
-```
-snooze.module('myServer', ['snooze-stdlib'])
-  .route('get', '/users/:username', {
-    controller: 'UserCtrl',
-    action: 'getUser'
-  })
-  .route('put', '/users/save', {
-  	controller: 'UserCtrl',
-  	action: 'save',
-  	validators: 'BasicAuth'
-  })
-  .route('post', '/user/new', {
-    controller: 'UserCtrl',
-    action: 'new'
-  })
-  .setPort(80); // Defaults to 3000
-```
-
-Routes are defined as **.route(method, path, options)**. The possible methods are **GET**, **POST**, **PUT**, and **DELETE**.
-
-#### Route Options
-
-Options requires a controller and action for a route. The controllers will be explained next. The actions are methods (functions) in the controller that will handle the request and send the response.
-
-Validators are optional and will be explained later.
-
-## Controllers
-
-Controllers are used to handle all http requests. Controllers can be defined in the following way-
-
-```
-snooze.module('myServer').controller('UserCtrl', function(User) {
-  var _getUser = function(res, options) {
-    res.send(200, {'username': options.params.username}); // params.username set by :username parameter in route. Ex: /users/iamchairs
-  };
-
-  var _save = function(res, options) {
-  	User.save(options.body); // body is the payload of the PUT, POST, or DELETE request
-  };
-
-  var _new = function(res, options) {
-    User.new(options.body); // body is the payload of the PUT, POST, or DELETE request
-  };
-
-  return {
-    getUser: _getUser,
-    save: _save,
-    new: _new
-  };
-});
-```
-
-The methods defined in the controller handle processing and responding to http calls defined by route's action.
-
-You can see **User** is being passed as a parameter and used in _save and _new. This is a service and is injected when the the module compiles it's services and controllers. More on services next.
-
-Options is an object of all the useful information about the request. Currently this means parameters, url queries, and the body of the request.
-
-**It is important to remember that controllers should be stateless. Only one UserCtrl controller is created for the entire application.**
-
-## Services
-
-Services are any kind of injectable and should be used to handle any thinking, querying, mapping, etc. A controller **CAN** but **SHOULDN'T** do all of the thinking, querying, and mapping of data but this defeats the purpose creating a modular architecture. A service can be defined like so-
-
-```
-snooze.module('myServer').service('Hello', function(AnotherService) {
-  var _getGreeting = function() {
-    return 'Hello Authorized World!';
-  };
-
-  return {
-    getGreeting: _getGreeting
-  };
-});
-```
-
-Services can also be injected into other services. The Hello service will be able to use whatever *AnotherService* provides in it's return.
-
-**It is important to remember that services should be stateless. Only one Hello service is created for the entire application.**
-
-### Validators
-
-Validators are very important in saving time and creating a readable application. It removes most of the redundant and simple checks from the logic of the controllers and services allowing you to focus on what the controllers and services are **actually** doing. Validators are defined similary to controllers and services and their names are provided to routes **validator** option as a string or an array of strings. To define a service you'l write-
-
-```
-snooze.module('myServer').validator('BasicAuth', function() {
-  return function(deferred, req) {
-    deferred.resolve()
-  };
-});
-```
-
-Validators return a function and **deferred** and **req** are provided to the function at runtime. The validator will not itself send a response but will either reject or resolve the defer. When rejection an array should be provided with the first index being the response code (200, 404, 500, etc.) and the second being a string as the message of the error. If no rejection response is provided a 500 error is sent with a message referencing the route that failed.
-
-If your server includes a login a common validator you'l implement is a BasicAuth validator. An example can be seen here-
-
-```
-var snooze = require('snooze');
-
-snooze.module('myServer').validator('BasicAuth', function(User) {
-  return function(deferred, req) {
-    setTimeout(function() {
-      var header = req.headers['authorization'] || null;
-      if(header !== null) {
-        token = header.split(/\s+/).pop()||'';
-        auth = new Buffer(token, 'base64').toString();
-        parts = auth.split(/:/);
-
-        username = parts[0];
-        password = parts[1];
-
-        User.validLogin(username, password).then(function() {
-          deferred.resolve();
-        }).fail(function() {
-          deferred.reject([401, 'invalid loggin'])
-        });
-      } else {
-        deferred.reject([401, 'user not logged in']);
-      }
-    }, 500);
-  };
-});
-
-snooze.module('myServer').route('/messages/post', {
-  controller: 'PostsCtrl',
-  action: 'new',
-  validators: 'BasicAuth'
-});
-```
-
-When multiple validators are provided-
-
-```
-snooze.module('myServer').route('/post/delete/:thread_id', {
-  controller: 'ThreadCtrl',
-  ation: 'delete',
-  validators: ['BasicAuth', 'ThreadOwner']
-});
-```
-
-- All validators need to resolve before the request continues to the controller. If any validator rejects the request the tests will stop and the rejection response will send immediately.
-
-### Starting the Server
-
-Once all routes, controllers, services, and validators are defined you'l need to start the server manually.
-
-```
-snooze.module('myServer').wakeup();
-```
-> (loading information)
-
-> Is it morning already?
-
-> snooze started on port 8000
-
-## Application Structure
-
-This is up to you. I've begun organizing my application as such-
-
-```
-main.js
-controllers\
-  UserCtrl.js
-routes\
-  User.js
-services\
-  User.js
-validators\
-  BasicAuth.js
-dto\
-  UserDTO.js
-```
-
-And to make loading all requirements easier you can use the libs module method to load all files in a directory into your project.
-
-```
-snooze.module('myServer').libs(['controllers', 'routes', 'services', 'validators', 'dto']);
-```
-
-## DTOs
-
-```
-snooze.module('myModule').dto('ContactDTO', {
-  id: {
-    type: 'int',
-    description: 'Id of the contact row',
-    example: 1
-  },
-  user1: {
-    type: 'int',
-    description: 'Id of the first user',
-    example: 1
-  },
-  user2: {
-    type: 'int',
-    description: 'Id of the second user',
-    example: 2
-  }
-});
-```
-
-### Injecting DTOs
-
-```
-snooze.module('myModule').service('User', function(DB, ContactDTO, $q) {
-  var _getContact = function(id) {
-    // $q is a stdlib service
-    var deferred = $q.defer();
+    # install snooze to your local project
+    npm install snooze
     
-    // DB doesn't exist as a service in the stdlib
-    DB.query('SELECT * FROM contacts WHERE id=?', [id], function(err, rows) {
-      deferred.resolve(ContactDTO.create(rows[0]));
+    # install snooze-baselib as a starting place for your project
+    npm install snooze-baselib
+    
+    # optionally install snooze-cli to start
+    # your projects using a snooze.json config file
+    sudo npm install -g snooze-cli
+## Setup
+To create a simple one-file snooze application an example is shown below. More advanced setups later in the README. It is recommended that beginners, intermediates, and advanced users use the `snooze-baselib` module unless there are specific reasons not to. The `snooze-baselib` module contains usefule `Entities` and `importProcesses`.
+
+    // main.js
+    (function() {
+        'use strict';
+        
+        // Snooze is a global object. Because of node's require caching
+        // the snooze object has one instance accross all files.
+        var snooze = require('snooze');
+        
+        // Creates a myApp module and imports the `snooze-baselib` module
+        snooze.module('myApp', ['snooze-baselib'])
+            // Creates a run function that will be ran when the application starts
+            .run(function() {
+                console.log('Hello World!');
+            })
+            // Does some compiling and begins the app by calling all config
+            // and run processes.
+            .wakeup();
+    })();
+Outputs
+
+    # running via terminal
+    node main.js
+    Hello World!
+    
+#### Modules
+Modules are a flexible wrapper or foundation for your project. They can be designed to share a set of functionality to other modules (and are not intended to run alone), or they can be designed to run your application. Modules greatest strength is that it allows sharing functionality easily and in an abstrated, modular way. To create a module use the `snooze.module` method.
+
+    var snooze = require('snooze');
+    snooze.module('myApp', []);
+    
+When creating a module the second param is required. It can be an empty array or an array of modules to import. All module methods that don't return a value returns itself making commands chainable.
+
+    snooze.module('myApp', []).doSomething().doSomethingElse();
+    
+If the modules is already created you can access it be omitting the array.
+
+    snooze.module('myApp').doSomething();
+    
+#### Importing Modules
+Importing modules lets you import functionality into your application seemlessly. Modules can be written yourself or downloaded using npm. `snooze-baselib` is a highly recommended starting point. Using it as an example, to install it and import it into your project do the following.
+
+```
+ npm install snooze-baselib --save
+```
+```
+snooze.module('myApp', ['snooze-baselib']);
+```
+
+If the npm module hasn't been required using `require()` snooze will try to do this automatically. If you are trying to import a local module (not from npm) `require()` it manually before you try to import it into another module.
+
+**Note** When a module is constructed the dependant modules will import immediately.
+
+#### run
+A run processes may be what you use to run your app. Your module can define multiple run processes that will get called once `wakeup` or `doRuns` is called. It's recommended you should use `wakeup` instead. Run processes allow injected Entities.
+
+    angular.module('myApp').run(function(MyService) {
+        MyService.doSomething();
     });
     
-    return deferred.promise;
-  };
-  
-  return {
-    return getContact: _getContact
-  };
-});
-```
+#### config
+Config processes are called before run processes. Entities may define a config object. This is up to the writer of the entity to provide as well as document.
 
-### Nesting DTOs
+    angular.module('myApp').config(function(MyService) {
+        MyService.maxSomethings = 10;
+    }).run(function(MyService) {
+        MyService.doSomething();
+    });
+    
+Depending on how the Entity is written. Some entities may provide a config and an injectable, just a config, or just an injectable. See the documentation of the Entity for it's possible uses.
 
-```
-snooze.module('myModule').dto('UserDTO', {
-  id: {
-    type: 'int',
-    description: 'Id of the user.',
-    example: 1
-  },
-  username: {
-    type: 'string',
-    description: 'Username of the user',
-    example: 'iamchairs'
-  },
-  __methods: {
-    fromDB: function() {
-      return function(data) {
-        return {
-          id: data.user_id,
-          username: data.user_username
-        };
-      };
-    }
-  }
-});
+#### wakeup
+Because I am a pun-master (i'm not), to start your *snooze* application you should *wakeup*. This will go through the `configPreprocessors`, `config` processes, and `run` processes in that order.
 
-snooze.module('myModule').dto('ContactDTO', {
-  id: {
-    type: 'int',
-    description: 'Id of the contact row',
-    example: 1
-  },
-  user1: {
-    type: '@UserDTO',
-    description: 'A UserDTO of the user.',
-    example: '@UserDTO'
-  },
-  user2: {
-    type: '@UserDTO',
-    description: 'A UserDTO of the user.',
-    example: '@UserDTO'
-  },
-  __methods: {
-    fromDB: function(UserDTO) {
-      return function(data) {
-        return {
-          id: data.contact_id,
-          user1: UserDTO.fromDB(data),
-          user2: UserDTO.fromDB(data)
-        };
-      };
-    }
-  }
-});
-```
+    snooze.module('myApp')
+        .run(function() {
+            console.log('foo');
+        });
+    
+    console.log('bar');
+    
+    snooze.module('myApp').wakeup();
+Outputs
 
-## snooze Command Line Interface
+    bar
+    foo
 
-A juvenile command line interface has begun that will help inspecting your snooze application. To use it make sure you've installed snooze globally.
+#### Entities
+A Service in pre-alpha is what is now a *type* of Entity in alpha. An Entity can be created and customized to serve any purpose. Using the **recommended** `snooze-baselib` module in your projects you get the `service`, `value`, and `constant` entities in your project. Other entities can be imported from other modules or created by the developer and shared through imports.
 
-```
-npm install snooze -g
-```
+An Entity can be injected into snooze processes or any "injectable function". They can also be injected into Entities that define a function for their `constructor`. Taking the `service` Entity from `snooze-baselib` we can create a Math service for our application.
+
+    // lib/services/Math.js
+    (function() {
+        'use strict';
+        var snooze = require('snooze');
         
-Navigate to your service application route directory and in the terminal type
+        // Constructing a service named Math. The second parameter is the constructor.
+        // This function can also contain injectable Entities like services.
+        snooze.module('myApp').service('Math', function() {
+            return {
+                sum: function(num1, num2) {
+                    return num1, num2;
+                }
+            };
+        })
+        .run(function(Math) {
+            console.log(Math.sum(10, 5));
+        });
+    });
+Outputs
 
-```
-snooze [module_name] help
-```
+    node main.js
+    15
+**Note** we don't include the dependencies here. When dependencies are defined, snooze will construct a module. When no dependencies are defined you are accessing the module.
+
+Entities come in different shapes and sizes. Lets create a bank app that prevents you from withdrawing more that $500 at a time.
+
+// lib/services/Bank.js
+    (function() {
+        'use strict';
+        var snooze = require('snooze');
         
-for the list of avaialble commands. The snooze command line expects your server applications starting point to be main.js.
+        snooze.module('myApp').service('Bank', function(maxWithdrawAmount) {
+            return {
+                withdraw: function(accountBalance, withdrawAmount) {
+                    if(withdrawAmount > maxWithdrawAmount) {
+                        console.log('Unable to withdraw $' + withdrawAmount + ' as it exceeds the max withdraw amount of $' + maxWithdrawAmount);
+                        
+                        return accountBalance;
+                    } else {
+                        return accountBalance - withdrawAmount;
+                    }
+                }
+            };
+        })
+        .constant('maxWithdrawAmount', 500)
+        .run(function(Bank) {
+            var myBalance = 1000;
+            myBalance = Bank.withdraw(myBalance, 700);
+            myBalance = Bank.withdraw(myBalance, 200);
+            
+            console.log('$' + myBalance);
+        });
+    });
+Output
 
-Site with documenation now up!
-http://snoozejs.org/
+    node main.js
+    Unable to withdraw $700 as it exceeds the max withdraw amount of $500
+    $800
+    
+For more information on `service`, `value`, and `constant`, see the [snooze-baselib README](https://github.com/iamchairs/snooze-baselib).
+
+#### Registering Entities
+Each module is responsible for importing it's own entities. You don't need to worry about importing the entities from a module you are importing. The module you are importing (say `snooze-baselib`) will import it's Entity types (`service`, `value`, and `constant`) as well as entities built on these types (like in our `Math` example). To create your own entities on these types and import them use the `registerEntitiesFromPath` method. You can specify the exact path of the file to import or use a [globbing pattern](https://github.com/isaacs/node-glob).
+
+    // main.js
+    (function() {
+        'use strict';
+        var snooze = require('snooze');
+        
+        snooze.module('myApp', ['snooze-baselib'])
+            .registerEntitiesFromPath('lib/services/Math.js')
+            // .registerEntitiesFromPath('lib/services/*.js') [all js files in lib/services]
+            // .registerEntitiesFromPath('lib/**/*.js') [all js files in lib recursively]
+            .run(function(Math) {
+                console.log(Math.sum(10, 5));
+            })
+            .wakeup();
+    })();
+
+#### snooze.json (config)
+
+If the root of your app has a snooze.json file in it, snooze will load the contents into the config when it's constructed. Modules can be written to read the config and change the behavior of your application in the configuration or running phases of your application. The only available property in vanila snooze.json is the **silent** property. False be default but set to true and logs and warns will not print to the console. So I will use `snooze-baselib`'s extension of config as an example.
+
+    {
+        silent: true
+    }
+
+## Advanced Modifications
+In this section I'll go into creating custom Entities, Config Preprocessors, and Import Processes, and extending snooze.json.
+
+Before you do this consider the following.
+* Is this functionality available elsewhere?
+* If this functionality exists but doesn't provide exactly what I need should I try contacting the author first?
+* How can this affect other modules?
+ * Is it modular enough?
+ * Is it abstracted?
+ * Am I modifying basic functionality accross the app in a potentially harmful way?
+   * Did I document this well enough?
+
+In several ways you can change the way snooze and modules work entirely through these features. This flexibility is powerful but can also be harmful. Be careful, be nice.
+
+#### Creating Entities
+`Entities` is a loose term for the type of Entity as well as instances of that type. An Entity type is refered to as an `EntityGroup`. And instance of an `EntityGroup` is an `Entity`. An `Entity` also creates and instance of itself when it's injected. So we have `EntityGroup`, `Entity`, and `EntityInstance`. Using `snooze-baselib` again as an example, a `service` is an `EntityGroup`. If we create a `service` called Math, Math is an `Entity`. When Math is injected (in say, a run processes) it injects an instance of Math called an `EntityInstance`.
+
+##### EntityGroups
+
+To create the `service` `EntityGroup` we will do the following.
+
+    // lib/entities/service.js
+    (function() {
+    	'use strict';
+    
+    	var snooze = require('snooze');
+    
+    	var Service = new snooze.EntityGroup();
+    	Service.type = 'service';
+    
+    	module.exports = Service;
+    })();
+
+The name, or type, of the Entity should set to the new `EntityGroup` object constructed from `snooze.EntityGroup`. The type should not contain spaces. The reason for this is because when this `EntityGroup` is compiled it's type will become a method on the module.
+
+Before `EntityGroup`
+
+    snooze.module('myApp')
+        .service('MyService', function() {}); // Error: undefined is not a function
+After `EntityGroup`
+
+    snooze.module('myApp')
+        .registerEntityGroupsFromPath('lib/entities/*.js')
+        .service('MyService', function() {}); // All good
+        
+##### Compiling
+
+The `EntityGroup` has a set of methods that take an `Entity` and apply it's config, injection, etc. An `Entity` is constructed in 2 parts. The first being the name of the `Entity`, the second being the `constructor`. The `constructor` in the above examples is the function, but this can be any value you defined as the constructor. In the `snooze-baselib` `constant` `Entity` the constructor is not a function but just whatever value is passed in the second argument **as is**. In any case, we need to create a `compile` method that takes the `constructor` and constructs an instance.
+
+    Service.compile = function(entity, entityManager) {
+		entity.instance = entityManager.run(entity.constructor);
+
+		if(entity.instance.$compile) {
+			entity.instance.$compile();
+		}
+	};
+	
+The service `compile` takes the `constructor` and runs it as an injectable function using `EntityManager`. The returned value is the `EntityInstance`. Additionally, if the newly created instance has a $compile method it will run that after compiling the instance.
+
+##### Registering Dependencies
+
+Once the instance has been compiled we should write the `registerDependencies` method. Not all Entities will have dependencies and the ones that do may not use an injectable function as it's `constructor`. Because of this, it's up to the author of the `Entity` to create a method that will register the Entities dependencies. This step is important, it will prevent circular dependencies and infinite loops.
+
+    Service.registerDependencies = function(entity, entityManager) {
+		if(typeof entity.constructor === 'function') {
+			entity.dependencies = snooze.Util.getParams(entity.constructor);
+		} else {
+			throw Error('Services expect function constructors. ' + (typeof entity.constructor) + ' given');
+		}
+	};
+	
+##### Injecting
+
+The `EntityGroup` should define what an Entity provides when it's being injected. In the case of a `service` we will return the instance unless $get is defined (in which case that will be returned).
+
+    Service.getInject = function(entity, entityManager) {
+		if(entity.instance.$get) {
+			return entity.instance.$get;
+		}
+
+		return entity.instance;
+	};
+**Using $get**
+
+    snooze.module('myApp')
+        .service('MyService1', function() {
+            // Here is the injected value
+            return {
+                foo: function() {
+                    return 'bar';
+                }
+            };
+        })
+        .service('MyService2', function() {
+            var properties = {
+                fooValue: 'bar'
+            };
+            return {
+                properties: properties
+                // Here is the injected value
+                '$get': {
+                    foo: function() {
+                        return properties.fooValue
+                    }
+                }
+            };
+        })
+        .run(function(MyService1, MyService2) {
+            console.log(MyService1.foo());
+            console.log(MyService2.foo());
+        });
+Outputs
+
+    bar
+    bar
+    
+##### Configuring
+
+Similar to the `getInject` method but used when injecting into `module.config` processes.
+    
+    Service.getConfig = function(entity, entityManager) {
+		if(entity.instance.$config) {
+			return entity.instance.$config;
+		}
+
+		return entity.instance;
+	};
+	
+Using to update $get.
+
+    snooze.module('myApp')
+        .service('MyService1', function() {
+            // Here is the injected value
+            return {
+                foo: function() {
+                    return 'bar';
+                }
+            };
+        })
+        .service('MyService2', function() {
+            var properties = {
+                fooValue: 'bar'
+            };
+            return {
+                properties: properties
+                // Here is the injected value
+                '$get': {
+                    foo: function() {
+                        return properties.fooValue
+                    }
+                }
+            };
+        })
+        .config(function(MyService2) {
+            MyService2.properties.fooValue = 'baz';
+        })
+        .run(function(MyService1, MyService2) {
+            console.log(MyService1.foo());
+            console.log(MyService2.foo());
+        });
+Outputs
+    
+    bar
+    baz
+    
+##### Other Properties
+
+**private** - You can set an `Entity` as private. This means it will not be shared to an importing module. (default: false)
+
+**injectable** - You can set any individual `Entity` as injectable or not. If false, the `Entity` cannot be injected into other Entities or run processes. (default: true)
+
+**configurable** - You can set any individual `Entity` as configurable or not. If false, the `Entity` cannot be injected into config processes. (default: true)
+
+```
+    Service.compile = function(entity, entityManager) {
+		entity.instance = entityManager.run(entity.constructor);
+
+		entity.private = entity.$private || entity.private;
+		entity.injectable = entity.$injectable || entity.injectable;
+		entity.configurable = entity.$configurable || entity.configurable;
+
+		if(entity.instance.$compile) {
+			entity.instance.$compile();
+		}
+	};
+```
+
+```
+    // This service is only configurable
+    snooze.module('myApp')
+        .service('routeManager', function() {
+            return {
+                $injectable: false,
+                path: function(url, cb) { ... }
+            };
+        })
+        .config(function(routeManager) {
+            routeManager.path('/users', function() { ... });
+        });
+```
+
+#### Import Processes
+Import processes define how to import modules into others. By default, snooze has no import processes. `snooze-baselib` defines processes to import Entities. An import process is a function that returns the import process function. The first function allows manipulation of the existing importProcesses. The second (nested) function gets appended to the array of import processes.
+
+The import processes is given the source (imported) module and the dest (importee) module.
+
+Here is the processes for importing Entities.
+```
+    // lib/importProcesses/importEntities.js
+    (function() {
+    	'use strict';
+    
+    	module.exports = function(processes) {
+    		return function(source, dest) {
+    			var entities = source.EntityManager.getEntities();
+    
+    			for(var i = 0; i < entities.length; i++) {
+    				var entity = entities[i];
+    				dest.log(('+ Entity: ' + entity.getName()).blue);
+    				if(dest.EntityManager.entityExists(entity)) {
+    					dest.warn('Entity Exists: ' + entity.getName());
+    				} else {
+    					dest.EntityManager.registerEntity(entity);
+    				}
+    			}
+    		};
+    	};
+    })();
+```
+```
+snooze.module('myApp')
+    .registerImportProcessesFromPath('lib/importProcesses/*.js');
+```
+
+#### Config Preprocessors
+Config preprocessors is another tool to help you extend snooze.json. `snooze-baselib` defines a preprocessors that allows you to define run modes for your application.
+```
+    // lib/configPreprocessors/mergeModeConfig.js
+    (function() {
+    	'use strict';
+    
+    	module.exports = function(processes) {
+    		return function(config, module) {
+    			var mode = config.mode;
+    			if(mode) {
+    				if(config.modes[mode]) {
+    					for(var key in config.modes[mode]) {
+    						config[key] = config.modes[mode][key];
+    					}
+    				}
+    			}
+    
+    			console.log(config);
+    		};
+    	};
+    })();
+```
+```
+snooze.module('myApp')
+    .registerConfigPreprocessorsFromPath('lib/importProcesses/*.js');
+```
+
+#### Extending snooze.json
+Unrecognized properties in the snooze.json are passively ignored. Using `configPreprocessors` and writing your Entities to read from the config lets you define custom configurations. The entire configuration is always available when called. One example for extending the snooze.json is if you were creating an HTTP service.
+
+``` 
+    // snooze.json
+    {
+        mode: 'development',
+        modes: {
+            development: {
+                port: 8080
+            },
+            production: {
+                port: 80
+            }
+        }
+    }
+```
+```
+    snooze.module('myApp')
+            .service('HTTP', function($config) {
+                var port = $config.port;
+                
+                // ...
+            });
+```
+
+What properties are available in config should be documented.
