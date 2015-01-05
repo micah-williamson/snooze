@@ -236,4 +236,24 @@ describe('EntityGroup', function() {
 			})
 			.wakeup();
 	});
+
+	it('should throw an error when trying to overwrite a constant entity', function() {
+		initServiceGroup();
+		EntityGroup.constant = true;
+		registerServiceGroup();
+
+		var thrown = false;
+
+		try {
+			snooze.module('myApp')
+				.service('Test', function() {})
+				.service('Test', function() {});
+		} catch(e) {
+			thrown = true;
+		}
+
+		thrown.should.equal(true);
+
+		EntityGroup.constant = false;
+	});
 });
