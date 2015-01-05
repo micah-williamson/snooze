@@ -239,7 +239,7 @@ After `EntityGroup`
         
 ##### Compiling
 
-The `EntityGroup` has a set of methods that take an `Entity` and apply it's config, injection, etc. An `Entity` is constructed in 2 parts. The first being the name of the `Entity`, the second being the `constructor`. The `constructor` in the above examples is the function, but this can be any value you defined as the constructor. In the `snooze-baselib` `constant` `Entity` the constructor is not a function but just whatever value is passed in the second argument **as is**. In any case, we need to create a `compile` method that takes the `constructor` and constructs an instance.
+The `EntityGroup` has a set of methods that take an `Entity` and apply it's config, injection, etc. An `Entity` is constructed in 2 parts. The first being the name of the `Entity`, the second being the `constructor`. The `constructor` in the above examples is the function, but this can be any value you defined as the constructor. In the `snooze-baselib` `constant` `Entity` the constructor is not a function but just whatever value is passed in the second argument **as is**. In any case, we need to create a `compile` method that takes the `constructor` and constructs an instance. Entities compile when `module.EntityManager.compile` or `module.wakeup` is called. They are not compiled when registered because some Entities will be defined with dependencies that don't yet exist. Once `wakeup` is called an `module.isAwake` is set to true, Entites will autocompile individually.
 
     Service.compile = function(entity, entityManager) {
 		entity.instance = entityManager.run(entity.constructor);
