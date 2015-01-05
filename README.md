@@ -361,7 +361,11 @@ Outputs
 
 **private** - You can set an `Entity` as private. This means it will not be shared to an importing module. (default: false)
 
+    Service.private = false;
+
 **injectable** - You can set any individual `Entity` as injectable or not. If false, the `Entity` cannot be injected into other Entities or run processes. (default: true)
+
+    Service.injectable = true;
 
 **configurable** - You can set any individual `Entity` as configurable or not. If false, the `Entity` cannot be injected into config processes. (default: true)
 
@@ -392,6 +396,10 @@ Outputs
             routeManager.path('/users', function() { ... });
         });
 ```
+
+**constant** - You can set an EntityGroup as `constant` (true) to throw an error if the Entity is attempted to be overwritten. (default: false)
+
+    Service.constant = false;
 
 #### Import Processes
 Import processes define how to import modules into others. By default, snooze has no import processes. `snooze-baselib` defines processes to import Entities. An import process is a function that returns the import process function. The first function allows manipulation of the existing importProcesses. The second (nested) function gets appended to the array of import processes.
