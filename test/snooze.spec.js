@@ -5,7 +5,7 @@ describe('Snooze', function() {
 	var should = require('should');
 
 	beforeEach(function() {
-		snooze = require('snooze');
+		snooze = require('../index.js');
 		snooze.clear();
 	});
 

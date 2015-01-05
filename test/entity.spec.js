@@ -6,7 +6,7 @@ describe('Entity', function() {
 	var should = require('should');
 
 	beforeEach(function() {
-		snooze = require('snooze');
+		snooze = require('../index.js');
 		snooze.clear();
 
 		Entity = new snooze.Entity();
