@@ -6,7 +6,7 @@ describe('Module', function() {
 	var should = require('should');
 
 	beforeEach(function() {
-		snooze = require('snooze');
+		snooze = require('../index.js');
 		snooze.clear();
 
 		Module = snooze.module('Test', []);
@@ -57,8 +57,8 @@ describe('Module', function() {
 		Module.EntityManager.should.not.equal(undefined);
 	});
 
-	it('should have no importProcesses', function() {
-		Module.importProcesses.length.should.equal(0);
+	it('should have 2 importProcesses', function() {
+		Module.importProcesses.length.should.equal(2);
 	});
 
 	it('should run a run process', function() {
@@ -79,6 +79,45 @@ describe('Module', function() {
 		snooze.module('Test2', []);
 		Module.addModules(['Test2']);
 		Module.modules.length.should.equal(1);
+	});
+
+	it('should import transient importProcesses, configPreprocessors, and Entities', function(done) {
+		var TestEntity = new snooze.EntityGroup();
+		TestEntity.type = 'test';
+		TestEntity.compile = function(entity, entityManager) {
+			entity.instance = entity.constructor;
+		};
+		TestEntity.registerDependencies = function() {};
+		TestEntity.getInject = function(entity, entityManager) {
+			return entity.instance;
+		};
+
+		snooze.module('Test3', []).EntityManager.registerEntityGroup(TestEntity);
+
+		snooze.module('Test3')
+			.importProcess(function() {
+				return function() {
+					return 'foo';
+				};
+			})
+			.configPreprocessor(function() {
+				return function() {
+					return 'foo';
+				};
+			})
+			.test('MyTest', 'foo');
+		
+		snooze.module('Test4', ['Test3']);
+
+		var Test5 = snooze.module('Test5', ['Test4'])
+						.run(function(MyTest) {
+							MyTest.should.equal('foo');
+							done();
+						})
+						.wakeup();
+
+		Test5.importProcesses[Test5.importProcesses.length-1]().should.equal('foo');
+		Test5.configPreprocessors[Test5.configPreprocessors.length-1]().should.equal('foo');
 	});
 
 	it('should run an importProcess', function() {

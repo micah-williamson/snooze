@@ -239,7 +239,7 @@ After `EntityGroup`
         
 ##### Compiling
 
-The `EntityGroup` has a set of methods that take an `Entity` and apply it's config, injection, etc. An `Entity` is constructed in 2 parts. The first being the name of the `Entity`, the second being the `constructor`. The `constructor` in the above examples is the function, but this can be any value you defined as the constructor. In the `snooze-baselib` `constant` `Entity` the constructor is not a function but just whatever value is passed in the second argument **as is**. In any case, we need to create a `compile` method that takes the `constructor` and constructs an instance.
+The `EntityGroup` has a set of methods that take an `Entity` and apply it's config, injection, etc. An `Entity` is constructed in 2 parts. The first being the name of the `Entity`, the second being the `constructor`. The `constructor` in the above examples is the function, but this can be any value you defined as the constructor. In the `snooze-baselib` `constant` `Entity` the constructor is not a function but just whatever value is passed in the second argument **as is**. In any case, we need to create a `compile` method that takes the `constructor` and constructs an instance. Entities compile when `module.EntityManager.compile` or `module.wakeup` is called. They are not compiled when registered because some Entities will be defined with dependencies that don't yet exist. Once `wakeup` is called an `module.isAwake` is set to true, Entites will autocompile individually.
 
     Service.compile = function(entity, entityManager) {
 		entity.instance = entityManager.run(entity.constructor);
@@ -361,7 +361,11 @@ Outputs
 
 **private** - You can set an `Entity` as private. This means it will not be shared to an importing module. (default: false)
 
+    Service.private = false;
+
 **injectable** - You can set any individual `Entity` as injectable or not. If false, the `Entity` cannot be injected into other Entities or run processes. (default: true)
+
+    Service.injectable = true;
 
 **configurable** - You can set any individual `Entity` as configurable or not. If false, the `Entity` cannot be injected into config processes. (default: true)
 
@@ -392,6 +396,10 @@ Outputs
             routeManager.path('/users', function() { ... });
         });
 ```
+
+**constant** - You can set an EntityGroup as `constant` (true) to throw an error if the Entity is attempted to be overwritten. (default: false)
+
+    Service.constant = false;
 
 #### Import Processes
 Import processes define how to import modules into others. By default, snooze has no import processes. `snooze-baselib` defines processes to import Entities. An import process is a function that returns the import process function. The first function allows manipulation of the existing importProcesses. The second (nested) function gets appended to the array of import processes.

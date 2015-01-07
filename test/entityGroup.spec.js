@@ -10,7 +10,7 @@ describe('EntityGroup', function() {
 	var should = require('should');
 
 	beforeEach(function() {
-		snooze = require('snooze');
+		snooze = require('../index.js');
 		snooze.module('Test', []);
 		snooze.clear();
 
@@ -21,7 +21,7 @@ describe('EntityGroup', function() {
 			EntityGroup.compile = function(entity, entityManager) {
 				entity.instance = entityManager.run(entity.constructor);
 
-				if(entity.$compile) {
+				if(entity.instance.$compile) {
 					entity.instance.$compile();
 				}
 			};
@@ -33,8 +33,10 @@ describe('EntityGroup', function() {
 				}
 			};
 			EntityGroup.getInject = function(entity, entityManager) {
-				if(entity.instance.$get) {
-					return entity.instance.$get;
+				if(entity.instance) {
+					if(entity.instance.$get) {
+						return entity.instance.$get;
+					}
 				}
 
 				return entity.instance;
@@ -150,25 +152,31 @@ describe('EntityGroup', function() {
 		injection.message.should.equal('Foo Bar');
 	});
 
-	it('should inject the Test service in a run method', function() {
+	it('should inject the Test service in a run method', function(done) {
 		initServiceGroup();
 		registerServiceGroup();
 		createTestService();
 
-		snooze.module('Test').run(function(Test) {
-			Test.message.should.equal('Foo Bar');
-		});
+		snooze.module('Test')
+			.run(function(Test) {
+				Test.message.should.equal('Foo Bar');
+				done();
+			})
+			.wakeup();
 	});
 
-	it('should inject Test2 into Test and Test service in a run method. Test should be available through the Test2 service.', function() {
+	it('should inject Test2 into Test and Test service in a run method. Test should be available through the Test2 service.', function(done) {
 		initServiceGroup();
 		registerServiceGroup();
 		createTestService();
 		createTest2Service();
 
-		snooze.module('Test').run(function(Test2, Test) {
-			Test2.Test.should.equal(Test);
-		});
+		snooze.module('Test')
+			.run(function(Test2, Test) {
+				Test2.Test.should.equal(Test);
+				done();
+			})
+			.wakeup();
 	});
 
 	it('should register Test as a dependency of Test2', function() {
@@ -179,5 +187,73 @@ describe('EntityGroup', function() {
 
 		var Test2 = snooze.module('Test').EntityManager.getEntity('Test2');
 		Test2.dependencies.length.should.equal(1);
+	});
+
+	it('should overwrite a service', function(done) {
+		initServiceGroup();
+		registerServiceGroup();
+		
+		snooze.module('Test')
+			.service('Test', function() {
+				return {
+					foo: 'bar'
+				};
+			})
+			.service('Test', function() {
+				return {
+					foo: 'baz'
+				};
+			})
+			.run(function(Test) {
+				Test.foo.should.equal('baz');
+				done();
+			})
+			.wakeup();
+	});
+
+	it('should overwrite a service after compile', function(done) {
+		initServiceGroup();
+		registerServiceGroup();
+		
+		snooze.module('Test')
+			.service('Test', function() {
+				return {
+					foo: 'bar'
+				};
+			})
+			.run(function(Test) {
+				Test.foo.should.equal('bar');
+				snooze.module('Test')
+					.service('Test', function() {
+						return {
+							foo: 'baz'
+						};
+					});
+			})
+			.run(function(Test) {
+				Test.foo.should.equal('baz');
+				done();
+			})
+			.wakeup();
+	});
+
+	it('should throw an error when trying to overwrite a constant entity', function() {
+		initServiceGroup();
+		EntityGroup.constant = true;
+		registerServiceGroup();
+
+		var thrown = false;
+
+		try {
+			snooze.module('myApp')
+				.service('Test', function() {})
+				.service('Test', function() {});
+		} catch(e) {
+			thrown = true;
+		}
+
+		thrown.should.equal(true);
+
+		EntityGroup.constant = false;
 	});
 });
