@@ -61,11 +61,12 @@ describe('Module', function() {
 		Module.importProcesses.length.should.equal(2);
 	});
 
-	it('should run a run process', function() {
+	it('should run a run process', function(done) {
 		var ran = false;
 		
 		Module.run(function() {
 			ran = true;
+			done();
 		});
 
 		ran.should.equal(false);
@@ -73,6 +74,16 @@ describe('Module', function() {
 		Module.doRuns();
 
 		ran.should.equal(true);
+	});
+
+	it('should inject the $config and $entityManager reserved injectables', function(done) {
+		Module.run(function($config, $entityManager) {
+			Module.snoozeConfig.should.equal($config);
+			Module.EntityManager.should.equal($entityManager);
+			done();
+		});
+
+		Module.doRuns();
 	});
 
 	it('should import the Test2 Module', function() {
