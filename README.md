@@ -356,6 +356,34 @@ Outputs
     
     bar
     baz
+
+#### Post Compile
+
+Entity instances can call a post-compile process. This is useful for managing services that need to do their own level of compiling once it's dependencies are ready. To set the post-compile processes set the `$post` value on the instance return object.
+
+    snooze.module('myApp')
+        .service('ServiceManager', function($entityManager) {
+            var services = [];
+
+            // This will run after EntityManager.compile has finished compiling all Entities.
+            function $post() {
+                var srvs = $entityManager.getEntities('service');
+                for(var i = 0; i < srvs.length; i++) {
+                    services.push(srvs[i].instance);
+                }
+            };
+
+            function getServices() {
+                return services;
+            };
+
+            return {
+                '$get': {
+                    getServices: getServices
+                },
+                '$post': $post
+            };
+        });
     
 ##### Other Properties
 
