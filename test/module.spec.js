@@ -1,13 +1,22 @@
 describe('Module', function() {
 	'use strict';
 
-	var Module;
-	var snooze;
+	var Module, snooze, TestEntity;
 	var should = require('should');
 
 	beforeEach(function() {
 		snooze = require('../index.js');
 		snooze.clear();
+
+		TestEntity = new snooze.EntityGroup();
+		TestEntity.type = 'test';
+		TestEntity.compile = function(entity, entityManager) {
+			entity.instance = entity.constructor;
+		};
+		TestEntity.registerDependencies = function() {};
+		TestEntity.getInject = function(entity, entityManager) {
+			return entity.instance;
+		};
 
 		Module = snooze.module('Test', []);
 	});
@@ -61,11 +70,12 @@ describe('Module', function() {
 		Module.importProcesses.length.should.equal(2);
 	});
 
-	it('should run a run process', function() {
+	it('should run a run process', function(done) {
 		var ran = false;
 		
 		Module.run(function() {
 			ran = true;
+			done();
 		});
 
 		ran.should.equal(false);
@@ -75,6 +85,16 @@ describe('Module', function() {
 		ran.should.equal(true);
 	});
 
+	it('should inject the $config and $entityManager reserved injectables', function(done) {
+		Module.run(function($config, $entityManager) {
+			Module.snoozeConfig.should.equal($config);
+			Module.EntityManager.should.equal($entityManager);
+			done();
+		});
+
+		Module.doRuns();
+	});
+
 	it('should import the Test2 Module', function() {
 		snooze.module('Test2', []);
 		Module.addModules(['Test2']);
@@ -82,16 +102,6 @@ describe('Module', function() {
 	});
 
 	it('should import transient importProcesses, configPreprocessors, and Entities', function(done) {
-		var TestEntity = new snooze.EntityGroup();
-		TestEntity.type = 'test';
-		TestEntity.compile = function(entity, entityManager) {
-			entity.instance = entity.constructor;
-		};
-		TestEntity.registerDependencies = function() {};
-		TestEntity.getInject = function(entity, entityManager) {
-			return entity.instance;
-		};
-
 		snooze.module('Test3', []).EntityManager.registerEntityGroup(TestEntity);
 
 		snooze.module('Test3')
@@ -137,5 +147,20 @@ describe('Module', function() {
 		Module.importModules();
 
 		ran.should.equal(true);
+	});
+
+	it('should run the $post process', function(done) {
+		var EntityManager = snooze.module('myPostApp', []).EntityManager;
+		EntityManager.registerEntityGroup(TestEntity);
+
+		snooze.module('myPostApp')
+			.test('test', {
+				$post: function() {
+					EntityManager.getEntity('test2').instance.should.equal('hello');
+					done();
+				}
+			})
+			.test('test2', 'hello')
+			.wakeup();
 	});
 });
