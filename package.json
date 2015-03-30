@@ -1,7 +1,7 @@
 {
   "name": "snooze",
   "description": "NodeJS Dependency Injection Framework",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0",
   "author": {
     "name": "Micah Williamson",
     "email": "micahwllmsn@gmail.com"
