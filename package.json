@@ -42,6 +42,7 @@
   "_shasum": "9c313512c65fbc83e75a23dc40d5013ea6af0b65",
   "_from": "snooze@0.7.52",
   "devDependencies": {
+    "fs-extra": "^0.17.0",
     "grunt": "^0.4.5",
     "grunt-contrib-jshint": "^0.10.0",
     "grunt-karma": "^0.9.0",
